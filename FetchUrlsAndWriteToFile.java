@@ -1,10 +1,10 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -26,9 +26,18 @@ public class FetchUrlsAndWriteToFile {
             e.printStackTrace();
         }
 
+        // Delete the previous output file (if it exists)
+        File file = new File(outputFile);
+        if (file.exists()) {
+            file.delete();
+        }
+
         // Fetch the content of each URL and append it to the output file
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(outputFile, true))) {
-            for (String url : urlList) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(outputFile))) {
+            int numUrls = urlList.size();
+            for (int i = 0; i < numUrls; i++) {
+                String url = urlList.get(i);
+                System.out.println("Downloading URL " + (i + 1) + " of " + numUrls + ": " + url);
                 URLConnection conn = new URL(url).openConnection();
                 conn.connect();
                 BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -38,11 +47,28 @@ public class FetchUrlsAndWriteToFile {
                     bw.newLine();
                 }
                 in.close();
+                printProgressBar((i + 1) / (double) numUrls);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        System.out.println("Finished writing content to " + outputFile);
+        System.out.println("\nFinished writing content to " + outputFile);
+    }
+
+    private static void printProgressBar(double progress) {
+        int width = 50;
+        System.out.print("\r[");
+        int pos = (int) (width * progress);
+        for (int i = 0; i < width; i++) {
+            if (i < pos) {
+                System.out.print("=");
+            } else if (i == pos) {
+                System.out.print(">");
+            } else {
+                System.out.print(" ");
+            }
+        }
+        System.out.printf("] %.1f%%", progress * 100);
     }
 }
